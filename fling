@@ -1,0 +1,14 @@
+#!/usr/bin/ruby
+
+require 'board'
+
+board = Board.new
+while a = gets
+  break if a.nil? || a.strip == ""
+	if a.strip.match(/^\d,\d$/)
+		x, y = a.strip.split(",")
+		board.add_ball(x.to_i, y.to_i)
+	end
+end
+
+puts board.legal_moves.inspect
