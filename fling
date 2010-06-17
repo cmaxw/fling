@@ -11,4 +11,4 @@ while a = gets
 	end
 end
 
-puts board.legal_moves.inspect
+puts board.solve.moves

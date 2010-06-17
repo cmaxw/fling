@@ -1,12 +1,16 @@
-require 'move'
+require 'movement'
+
+class NoLegalMoves < Exception; end
+class UnsolvableError < Exception; end
 
 class Board
   attr_reader :balls
 
   def initialize
+    @movements = []
     @balls = 0
-    @columns = (0..6).map {|p| (0..7).map {|q| :empty}}
-    @rows = (0..7).map {|p| (0..6).map {|q| :empty}}
+    @columns = (0..10).map {|p| (0..10).map {|q| :empty}}
+    @rows = (0..10).map {|p| (0..10).map {|q| :empty}}
   end
 
   def add_ball(x, y)
@@ -20,6 +24,81 @@ class Board
     @columns[x][y] = :empty
     @rows[y][x] = :empty
   end
+  
+  def solve
+    lmoves = legal_moves
+    raise NoLegalMoves if lmoves.empty?
+    legal_moves.each do |lmove|
+      board = self.dup
+      board.move(lmove, true)
+      begin
+        board.solve
+        return board.moves
+      rescue NoLegalMoves
+        
+      rescue UnsolvableError
+        
+      end
+    end
+    raise UnsolvableError
+  end
+  
+  def move(movement, record = true)
+    @movements << movement if record
+    send("move_#{movement.direction}", movement.x, movement.y)
+  end
+  
+  def move_left(x, y)
+    if y == 0
+      @columns[x][y] = :empty
+      @rows[y][x] = :empty
+    else
+      space = @columns[x][y]
+      left_space = @columns[x][y-1]
+      @rows[y][x] = @columns[x][y] = left_space
+      @rows[y-1][x] = @columns[x][y-1] = space
+      move_left(x, y-1)
+    end
+  end
+  
+  def move_right(x, y)
+    if y == @columns[x].size - 1
+      @columns[x][y] = :empty
+      @rows[y][x] = :empty
+    else
+      space = @columns[x][y]
+      right_space = @columns[x][y+1]
+      @rows[y][x] = @columns[x][y] = right_space
+      @rows[y+1][x] = @columns[x][y+1] = space
+      move_right(x, y+1)
+    end
+  end
+  
+  def move_up(x, y)
+    if x == @rows[y].size - 1
+      @rows[y][x] = :empty
+      @columns[x][y] = :empty
+    else
+      space = @columns[x][y]
+      up_space = @columns[x+1][y]
+      @rows[y][x] = @columns[x][y] = up_space
+      @rows[y][x+1] = @columns[x+1][y] = space
+      move_up(x+1, y)
+    end
+  end
+  
+  def move_down(x, y)
+    if x == 0
+      @rows[y][x] = :empty
+      @columns[x][y] = :empty
+    else
+      space = @columns[x][y]
+      up_space = @columns[x-1][y]
+      @rows[y][x] = @columns[x][y] = up_space
+      @rows[y][x-1] = @columns[x-1][y] = space
+      move_down(x-1, y)
+    end    
+  end
 
   def legal_moves
     moves = []
@@ -27,9 +106,9 @@ class Board
       column.each_with_index do |space, y|
         if space == :ball
           # If there's a ball above me and not next to me, I can move up
-          moves << Move.new(x, y, :up) if y < 7 && column[y+1, 8].include?(:ball) && column[y+1] != :ball
+          moves << Movement.new(x, y, :up) if y < 7 && column[y+1, 8].include?(:ball) && column[y+1] != :ball
           # If there's a ball below me and not next to me, I can move down
-          moves << Move.new(x, y, :down) if y > 0 && column[0, y-1].include?(:ball) && column[y-1] != :ball
+          moves << Movement.new(x, y, :down) if y > 0 && column[0, y-1].include?(:ball) && column[y-1] != :ball
         end
       end
     end
@@ -37,9 +116,9 @@ class Board
       row.each_with_index do |space, x|
         if space == :ball
           # If there's a ball above me and not next to me, I can move up
-          moves << Move.new(x, y, :right) if x < 6 && row[x+1, 8].include?(:ball) && row[x+1] != :ball
+          moves << Movement.new(x, y, :right) if x < 6 && row[x+1, 8].include?(:ball) && row[x+1] != :ball
           # If there's a ball below me and not next to me, I can move down
-          moves << Move.new(x, y, :left) if x > 0 && row[0, x-1].include?(:ball) && row[x-1] != :ball
+          moves << Movement.new(x, y, :left) if x > 0 && row[0, x-1].include?(:ball) && row[x-1] != :ball
         end
       end
     end
