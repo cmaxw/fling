@@ -3,6 +3,10 @@ require 'movement'
 class NoLegalMoves < Exception; end
 class UnsolvableError < Exception; end
 
+class UnsolvableException < Exception
+  
+end
+
 class Board
   attr_reader :balls
 
@@ -98,6 +102,40 @@ class Board
       @rows[y][x-1] = @columns[x-1][y] = space
       move_down(x-1, y)
     end    
+  end
+
+  def move_ball(move, record = true)
+    #Check direction
+    case move.direction
+    when :up
+      @columns[move.x].each {}
+    when :down
+      
+    when :right
+      
+    when :left
+      
+    end
+    #Find the ball it will collide with
+    #Remove the ball being moved
+    #Add the moved ball in the new position
+    #Move the collided ball
+  end
+  
+  def solve
+    legals = legal_moves
+    return @moves if solved?
+    raise UnsolvableException if legals.empty?
+    legals.each do |move|
+      board = self.dup
+      board.move_ball(move)
+      solution = move_board.solve rescue UnsolvableException
+    end
+    return solution
+  end
+  
+  def solved?
+    @balls == 1
   end
 
   def legal_moves
