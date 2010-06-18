@@ -4,13 +4,22 @@ class NoLegalMoves < Exception; end
 class UnsolvableError < Exception; end
 
 class Board
-  attr_reader :balls, :movements
+  attr_accessor :balls, :movements, :columns, :rows
 
   def initialize
     @movements = []
     @balls = 0
     @columns = (0..10).map {|p| (0..10).map {|q| :empty}}
     @rows = (0..10).map {|p| (0..10).map {|q| :empty}}
+  end
+
+  def copy
+    board = Board.new
+    board.balls = balls
+    board.movements = movements.dup
+    board.columns = columns.dup
+    board.rows = rows.dup
+    board
   end
 
   def add_ball(x, y)
@@ -29,11 +38,18 @@ class Board
     if @balls == 1
       return @movements 
     else
+      puts "=== SOLVE ==="
       lmoves = legal_moves
+      puts lmoves
+      puts " "
+      @rows.reverse.each {|r| puts r.inspect}
+      puts " "
       raise NoLegalMoves if lmoves.empty?
       legal_moves.each do |lmove|
-        board = self.dup
+        board = self.copy
         board.move(lmove, true)
+        @rows.reverse.each {|r| puts r.inspect}
+        puts " "
         begin
           return board.solve
         rescue NoLegalMoves
@@ -47,6 +63,10 @@ class Board
   end
 
   def move(movement, record = true)
+    puts "=== MOVE ==="
+    puts movement
+    # @rows.reverse.each {|r| puts r.inspect}
+    
     @movements << movement if record
     send("move_#{movement.direction}", movement.x, movement.y)
   end
@@ -80,14 +100,16 @@ class Board
       remove_ball(x, y)
     else
       space = @columns[x][y]
-      left_space = @columns[x+1][y]
-      @rows[y][x] = @columns[x][y] = left_space
+      right_space = @columns[x+1][y]
+      @rows[y][x] = @columns[x][y] = right_space
       @rows[y][x+1] = @columns[x+1][y] = space
       move_right(x+1, y)
     end
   end
 
   def move_left(x, y)
+    @rows.each {|r| puts r.inspect}
+    puts " "
     if x == 0
       remove_ball(x, y)
     else
