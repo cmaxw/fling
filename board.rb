@@ -4,7 +4,7 @@ class NoLegalMoves < Exception; end
 class UnsolvableError < Exception; end
 
 class Board
-  attr_reader :balls
+  attr_reader :balls, :movements
 
   def initialize
     @movements = []
@@ -24,82 +24,81 @@ class Board
     @columns[x][y] = :empty
     @rows[y][x] = :empty
   end
-  
+
   def solve
-    lmoves = legal_moves
-    raise NoLegalMoves if lmoves.empty?
-    legal_moves.each do |lmove|
-      board = self.dup
-      board.move(lmove, true)
-      begin
-        board.solve
-        return board.moves if solved?
-      rescue NoLegalMoves
-        
-      rescue UnsolvableError
-        
+    if @balls == 1
+      return @movements 
+    else
+      lmoves = legal_moves
+      raise NoLegalMoves if lmoves.empty?
+      legal_moves.each do |lmove|
+        board = self.dup
+        board.move(lmove, true)
+        begin
+          return board.solve
+        rescue NoLegalMoves
+
+        rescue UnsolvableError
+
+        end
       end
+      raise UnsolvableError
     end
-    raise UnsolvableError
   end
-  
+
   def move(movement, record = true)
     @movements << movement if record
     send("move_#{movement.direction}", movement.x, movement.y)
   end
-  
-  def move_left(x, y)
-    if y == 0
-      @columns[x][y] = :empty
-      @rows[y][x] = :empty
-    else
-      space = @columns[x][y]
-      left_space = @columns[x][y-1]
-      @rows[y][x] = @columns[x][y] = left_space
-      @rows[y-1][x] = @columns[x][y-1] = space
-      move_left(x, y-1)
-    end
-  end
-  
-  def move_right(x, y)
-    if y == @columns[x].size - 1
-      @columns[x][y] = :empty
-      @rows[y][x] = :empty
-    else
-      space = @columns[x][y]
-      right_space = @columns[x][y+1]
-      @rows[y][x] = @columns[x][y] = right_space
-      @rows[y+1][x] = @columns[x][y+1] = space
-      move_right(x, y+1)
-    end
-  end
-  
-  def move_up(x, y)
-    if x == @rows[y].size - 1
-      @rows[y][x] = :empty
-      @columns[x][y] = :empty
-    else
-      space = @columns[x][y]
-      up_space = @columns[x+1][y]
-      @rows[y][x] = @columns[x][y] = up_space
-      @rows[y][x+1] = @columns[x+1][y] = space
-      move_up(x+1, y)
-    end
-  end
-  
+
   def move_down(x, y)
-    if x == 0
-      @rows[y][x] = :empty
-      @columns[x][y] = :empty
+    if y == 0
+      remove_ball(x, y)
     else
       space = @columns[x][y]
-      up_space = @columns[x-1][y]
+      down_space = @columns[x][y-1]
+      @rows[y][x] = @columns[x][y] = down_space
+      @rows[y-1][x] = @columns[x][y-1] = space
+      move_down(x, y-1)
+    end
+  end
+
+  def move_up(x, y)
+    if y == @columns[x].size - 1
+      remove_ball(x, y)
+    else
+      space = @columns[x][y]
+      up_space = @columns[x][y+1]
       @rows[y][x] = @columns[x][y] = up_space
+      @rows[y+1][x] = @columns[x][y+1] = space
+      move_up(x, y+1)
+    end
+  end
+
+  def move_right(x, y)
+    if x == @rows[y].size - 1
+      remove_ball(x, y)
+    else
+      space = @columns[x][y]
+      left_space = @columns[x+1][y]
+      @rows[y][x] = @columns[x][y] = left_space
+      @rows[y][x+1] = @columns[x+1][y] = space
+      move_right(x+1, y)
+    end
+  end
+
+  def move_left(x, y)
+    if x == 0
+      remove_ball(x, y)
+    else
+      space = @columns[x][y]
+      left_space = @columns[x-1][y]
+      @rows[y][x] = @columns[x][y] = left_space
       @rows[y][x-1] = @columns[x-1][y] = space
-      move_down(x-1, y)
+      move_left(x-1, y)
     end    
   end
- 
+
   def solved?
     @balls == 1
   end

@@ -11,4 +11,4 @@ while a = gets
 	end
 end
 
-puts board.solve.moves
+puts board.solve
